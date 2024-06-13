@@ -57,9 +57,10 @@ def main():
         help="RGBD cache directory to use (default: none)",
     )
     parser.add_argument(
+        "--view_only",
         "--no_picker",
         action="store_true",
-        help="Do not use point picker",
+        help="View an existing annotation",
     )
     args = parser.parse_args()
 
@@ -235,7 +236,7 @@ def main():
     # Wrap visualizers in try-finally to ensure they are closed
     try:
         # Create visualizers
-        if not args.no_picker:
+        if not args.view_only:
             mesh_point_picker = PickPointVisualizer(
                 mesh_pcd, mesh_window, mesh_view_settings
             )
@@ -251,10 +252,10 @@ def main():
 
         # Create handlers for picked points and registration
         picked_points_mesh = (
-            PickedPointsHandler(mesh_point_picker) if not args.no_picker else None
+            PickedPointsHandler(mesh_point_picker) if not args.view_only else None
         )
         picked_points_rgbd = (
-            PickedPointsHandler(rgbd_point_picker) if not args.no_picker else None
+            PickedPointsHandler(rgbd_point_picker) if not args.view_only else None
         )
         p2p_registration = Point2PointRegistrationHandler(
             with_scaling=args.optimize_scale
@@ -268,7 +269,7 @@ def main():
         rate = RateLimiter(frequency=60, warn=False)
         while alignment_vis.render_frame():
             # Check for updates to picked points and run point-to-point registration
-            if not args.no_picker and (
+            if not args.view_only and (
                 picked_points_mesh.update() or picked_points_rgbd.update()
             ):
                 # Get picked points
@@ -331,7 +332,7 @@ def main():
     # Close visualizers
     finally:
         alignment_vis.close()
-        if not args.no_picker:
+        if not args.view_only:
             mesh_point_picker.close()
             rgbd_point_picker.close()
 
