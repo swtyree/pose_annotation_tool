@@ -152,7 +152,6 @@ def main():
     )
     from src.utils import (
         decompose_transform,
-        get_scale_from_transform,
         load_ply_pcd,
         load_rgbd_pcd,
         print_transform,
@@ -222,7 +221,7 @@ def main():
         field_of_view=10.0,
         front=[1.0, 0.0, 0.0],
         lookat=mesh_pcd.get_center().tolist(),
-        up=[0.0, 1.0, 0.0],
+        up=[0.0, 0.0, 1.0],
         zoom=1.0,
     )
     rgbd_view_settings = ViewSettings(
