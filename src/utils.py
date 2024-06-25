@@ -9,6 +9,7 @@ def load_rgbd_pcd(
     rgb_fn: Path,
     depth_fn: Path,
     camera_info: dict,
+    depth_max: float = 10.0,  # meters
 ) -> o3d.geometry.PointCloud:
     # Read RGB and depth images
     color_raw = o3d.io.read_image(str(rgb_fn))
@@ -20,6 +21,7 @@ def load_rgbd_pcd(
             "depth_scale"
         ],  # Open3D actually returns depth in meters
         convert_rgb_to_intensity=False,
+        depth_trunc=depth_max,
     )
 
     # Convert to point cloud

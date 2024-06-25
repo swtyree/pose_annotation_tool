@@ -7,7 +7,7 @@ import numpy as np
 from loop_rate_limiters import RateLimiter
 
 
-def main():
+def main() -> bool:
     # Parse command line arguments
     parser = argparse.ArgumentParser()
     parser.add_argument(
@@ -51,6 +51,12 @@ def main():
         help="Manually crop RGB-D point cloud",
     )
     parser.add_argument(
+        "--depth_max",
+        type=float,
+        default=2.0,
+        help="Maximum depth for RGB-D point cloud (in meters)",
+    )
+    parser.add_argument(
         "--rgbd_cache_dir",
         type=Path,
         default=None,
@@ -62,10 +68,22 @@ def main():
         action="store_true",
         help="View an existing annotation",
     )
+    parser.add_argument(
+        "--scene_gt_fn",
+        type=str,
+        default="scene_gt.json",
+        help="Scene GT filename",
+    )
+    parser.add_argument(
+        "--scene_camera_fn",
+        type=str,
+        default="scene_camera.json",
+        help="Scene camera filename",
+    )
     args = parser.parse_args()
 
     # Read or initialize scene GT
-    scene_gt_fn = args.scene_dir / "scene_gt.json"
+    scene_gt_fn = args.scene_dir / args.scene_gt_fn
     if scene_gt_fn.exists():
         scene_gt = bop_toolkit_lib.inout.load_scene_gt(scene_gt_fn)
     else:
@@ -122,7 +140,7 @@ def main():
     # Find necessary BOP files
     if args.object_id.isdigit():
         args.object_id = int(args.object_id)
-        mesh_fn = args.meshes_dir / f"{args.object_id:06d}.ply"
+        mesh_fn = args.meshes_dir / f"obj_{args.object_id:06d}.ply"
     else:
         mesh_fn = args.meshes_dir / f"{args.object_id}.ply"
     assert mesh_fn.exists(), f"Mesh file {mesh_fn} does not exist"
@@ -132,7 +150,7 @@ def main():
     assert rgb_fn.exists(), f"RGB-D file {rgb_fn.with_suffix('.*')} does not exist"
     depth_fn = args.scene_dir / "depth" / f"{args.view_id:06d}.png"
     assert depth_fn.exists(), f"RGB-D file {depth_fn} does not exist"
-    scene_camera_fn = args.scene_dir / "scene_camera.json"
+    scene_camera_fn = args.scene_dir / args.scene_camera_fn
     assert (
         scene_camera_fn.exists()
     ), f"Scene camera file {scene_camera_fn} does not exist"
@@ -176,9 +194,9 @@ def main():
     if rgbd_cache_fn and rgbd_cache_fn.exists():
         rgbd_pcd = load_ply_pcd(rgbd_cache_fn)
     else:
-        rgbd_pcd = load_rgbd_pcd(rgb_fn, depth_fn, camera_info)
+        rgbd_pcd = load_rgbd_pcd(rgb_fn, depth_fn, camera_info, args.depth_max)
 
-    # Crop RGBD point cloud, if requested
+    # Manually crop RGBD point cloud, if requested
     if args.crop:
         crop_view_settings = ViewSettings(
             field_of_view=10.0,
@@ -327,6 +345,7 @@ def main():
             )
             bop_toolkit_lib.inout.save_scene_gt(scene_gt_fn, scene_gt)
             print(f"Saved transformation to {scene_gt_fn}")
+            return True  # success; other routes will return None
 
     # Close visualizers
     finally:
@@ -337,4 +356,5 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    success = main()
+    exit(0 if success else 1)
