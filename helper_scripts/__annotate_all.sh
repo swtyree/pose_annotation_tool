@@ -1,6 +1,7 @@
 #!/bin/bash
 
 # get capture path and object/instance ids from args
+SOURCE_PATH=realpath $(dirname $0)/..
 MESHES_PATH_ANNOT=../meshes/release_fixed_scale/meshes_annot
 MESHES_PATH_RENDER=../meshes/release_fixed_scale/meshes_ply
 SCENE_NAME=$1
@@ -27,7 +28,7 @@ for OBJ_ID in $OBJ_IDS; do
     VIEW_ID_FN=$SCENE_PATH/scene_camera_raw.json
     for VIEW_ID in $(jq 'keys[]' $VIEW_ID_FN | jq -r 'tonumber' | sort -n); do
         echo "Loading view $VIEW_ID..."
-        python ~/code/pose_annotation_tool/main.py \
+        python $SOURCE_PATH/main.py \
             --meshes_dir $MESHES_PATH_ANNOT \
             --scene_dir $SCENE_PATH \
             --view_id $VIEW_ID \
@@ -44,7 +45,7 @@ done
 echo
 
 # propagate poses to all views
-python ~/code/pose_annotation_tool/propagate_poses.py \
+python $SOURCE_PATH/propagate_poses.py \
     scene_gt_raw.json \
     scene_camera.json \
     scene_gt.json \
@@ -52,7 +53,7 @@ python ~/code/pose_annotation_tool/propagate_poses.py \
 echo "Poses propagated to all views in $SCENE_NAME/scene_gt.json"
 
 # render reprojections
-python ~/code/pose_annotation_tool/vis_poses.py 
+python $SOURCE_PATH/vis_poses.py 
     $MESHES_PATH_RENDER \
     $OBJ_IDS \
     $SCENE_PATH/scene_camera.json \
